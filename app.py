@@ -54,29 +54,30 @@ def baixar():
         'no_warnings': True,
         'geo_bypass': True,
         
-        # Lê os cookies da conta fantasma (Obrigatório ter o arquivo cookies.txt atualizado na pasta)
-        'cookiefile': 'cookies.txt',
+        # TRUQUE DEFINITIVO PARA O YOUTUBE NO RENDER:
+        # Sem cookies e forçando apenas clientes mobile nativos (iOS e Android)
+        'extractor_args': {
+            'youtube': ['player_client=ios,android', 'player_skip=webpage']
+        }
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Extrai os dados sem baixar para o disco do Render
+            # Extrai os dados em modo fantasma mobile
             info = ydl.extract_info(url, download=False)
             
-            # Se o usuário colar um link de Playlist, pega o primeiro vídeo
             if 'entries' in info:
                 info = info['entries'][0]
 
             link_direto = info.get('url')
             
             if link_direto:
-                # Redireciona o navegador do usuário para o arquivo direto
                 return redirect(link_direto)
             else:
                 return "Erro: Não foi possível extrair o link direto.", 404
                 
     except Exception as e:
-        return f"Erro ao processar o link com yt-dlp: {str(e)}", 500
+        return f"Erro ao processar a extração da mídia: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
