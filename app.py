@@ -45,15 +45,22 @@ def baixar():
         except Exception as e:
             return f"Erro ao contornar o Twitter: {str(e)}", 500
 
-    # === YOUTUBE, TIKTOK, INSTAGRAM E OUTROS ===
-    # Seleciona formato único pré-mesclado para vídeo (MP4) ou melhor qualidade para áudio
+    # === PARA TODAS AS OUTRAS REDES (YouTube, TikTok, Instagram, etc) ===
     formato_ydl = 'bestaudio/best' if formato_escolhido == 'audio' else 'best[ext=mp4]/best'
 
     ydl_opts = {
         'format': formato_ydl,
         'quiet': True,
         'no_warnings': True,
-        'geo_bypass': True, # Ajuda a evitar bloqueios de região no TikTok e Instagram
+        'geo_bypass': True,
+        
+        # TRUQUE 1: Lê os cookies da conta fantasma para provar que "não é um robô"
+        'cookiefile': 'cookies.txt',
+        
+        # TRUQUE 2: Finge para o YouTube que o acesso está vindo de um iPhone ou Smart TV
+        'extractor_args': {
+            'youtube': ['player_client=ios,tv']
+        }
     }
 
     try:
@@ -61,14 +68,14 @@ def baixar():
             # Extrai os dados sem baixar para o disco do Render
             info = ydl.extract_info(url, download=False)
             
-            # Se o usuário colar um link de Playlist (YouTube/TikTok), pega o primeiro vídeo
+            # Se o usuário colar um link de Playlist, pega o primeiro vídeo
             if 'entries' in info:
                 info = info['entries'][0]
 
             link_direto = info.get('url')
             
             if link_direto:
-                # Redireciona o navegador do usuário para o arquivo direto nos servidores oficiais
+                # Redireciona o navegador do usuário para o arquivo direto
                 return redirect(link_direto)
             else:
                 return "Erro: Não foi possível extrair o link direto.", 404
