@@ -11,6 +11,8 @@ def index():
 @app.route('/baixar', methods=['POST'])
 def baixar():
     url = request.form.get('url')
+    formato_escolhido = request.form.get('formato', 'video')
+
     if not url:
         return "Erro: Nenhum link fornecido.", 400
 
@@ -27,15 +29,12 @@ def baixar():
                     if media['type'] == 'video':
                         link_video = media['url']
                         
-                        # O servidor puxa o vídeo secretamente (sem usar o navegador do usuário)
                         r = requests.get(link_video, stream=True)
                         
-                        # Repassa o vídeo em pedaços (streaming) para não sobrecarregar a memória do Render
                         def gerar_arquivo():
-                            for pedaco in r.iter_content(chunk_size=1024 * 1024): # Pedaços de 1MB
+                            for pedaco in r.iter_content(chunk_size=1024 * 1024):
                                 yield pedaco
                         
-                        # Força o navegador a fazer o download (attachment)
                         return Response(
                             stream_with_context(gerar_arquivo()),
                             content_type=r.headers.get('content-type', 'video/mp4'),
@@ -46,25 +45,36 @@ def baixar():
         except Exception as e:
             return f"Erro ao contornar o Twitter: {str(e)}", 500
 
-    # === PARA TODAS AS OUTRAS REDES (YouTube, TikTok, etc) ===
+    # === YOUTUBE, TIKTOK, INSTAGRAM E OUTROS ===
+    # Seleciona formato único pré-mesclado para vídeo (MP4) ou melhor qualidade para áudio
+    formato_ydl = 'bestaudio/best' if formato_escolhido == 'audio' else 'best[ext=mp4]/best'
+
     ydl_opts = {
-        'format': 'best',
+        'format': formato_ydl,
         'quiet': True,
         'no_warnings': True,
+        'geo_bypass': True, # Ajuda a evitar bloqueios de região no TikTok e Instagram
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Extrai os dados sem baixar para o disco do Render
             info = ydl.extract_info(url, download=False)
+            
+            # Se o usuário colar um link de Playlist (YouTube/TikTok), pega o primeiro vídeo
+            if 'entries' in info:
+                info = info['entries'][0]
+
             link_direto = info.get('url')
             
             if link_direto:
+                # Redireciona o navegador do usuário para o arquivo direto nos servidores oficiais
                 return redirect(link_direto)
             else:
-                return "Erro: Não foi possível encontrar o link direto.", 404
+                return "Erro: Não foi possível extrair o link direto.", 404
                 
     except Exception as e:
-        return f"Erro ao processar o link: {str(e)}", 500
+        return f"Erro ao processar o link com yt-dlp: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
