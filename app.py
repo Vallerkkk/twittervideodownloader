@@ -54,13 +54,8 @@ def baixar():
         'no_warnings': True,
         'geo_bypass': True,
         
-        # TRUQUE 1: Lê os cookies da conta fantasma para provar que "não é um robô"
+        # Lê os cookies da conta fantasma (Obrigatório ter o arquivo cookies.txt atualizado na pasta)
         'cookiefile': 'cookies.txt',
-        
-        # TRUQUE 2: Finge para o YouTube que o acesso está vindo de um iPhone ou Smart TV
-        'extractor_args': {
-            'youtube': ['player_client=ios,tv']
-        }
     }
 
     try:
