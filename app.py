@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request, redirect
 import yt_dlp
-import os
 
-# O parâmetro template_folder='.' faz a mágica de buscar o HTML na mesma pasta
 app = Flask(__name__, template_folder='.')
 
 @app.route('/')
@@ -14,6 +12,9 @@ def baixar():
     url = request.form.get('url')
     if not url:
         return "Erro: Nenhum link fornecido.", 400
+
+    # TRUQUE ANTI-ERRO: Converte x.com para twitter.com para o yt-dlp reconhecer
+    url = url.replace('https://x.com/', 'https://twitter.com/')
 
     ydl_opts = {
         'format': 'best',
@@ -29,7 +30,7 @@ def baixar():
             if link_direto:
                 return redirect(link_direto)
             else:
-                return "Erro: Não foi possível encontrar o link direto do vídeo.", 404
+                return "Erro: Não foi possível encontrar o link direto.", 404
                 
     except Exception as e:
         return f"Erro ao processar o link: {str(e)}", 500
