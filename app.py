@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, redirect
 import yt_dlp
+import os
 
-app = Flask(__name__)
+# O parâmetro template_folder='.' faz a mágica de buscar o HTML na mesma pasta
+app = Flask(__name__, template_folder='.')
 
 @app.route('/')
 def index():
@@ -13,7 +15,6 @@ def baixar():
     if not url:
         return "Erro: Nenhum link fornecido.", 400
 
-    # Configuração para extrair apenas a URL original, sem baixar no servidor
     ydl_opts = {
         'format': 'best',
         'quiet': True,
@@ -22,12 +23,10 @@ def baixar():
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # extract_info com download=False apenas puxa os dados do vídeo
             info = ydl.extract_info(url, download=False)
             link_direto = info.get('url')
             
             if link_direto:
-                # Redireciona o navegador do usuário direto para o arquivo de vídeo
                 return redirect(link_direto)
             else:
                 return "Erro: Não foi possível encontrar o link direto do vídeo.", 404
